@@ -14,7 +14,7 @@ from CPUIsolationLib import intListCallback
 #from CPUIsolationLib import initOutput
 from CPUIsolationLib import parse_cpuacct
 #from CPUIsolationLib import appendOutput
-from mininet.util import quietRun, numCores
+from mininet.util import quietRun, numCores, custom
 from mininet.topo import Topo
 
 
@@ -64,13 +64,6 @@ class PingPongTopo(Topo):
 
         self.add_link( hosts[0], hosts[1] )
 
-
-def custom(Class, **params):
-    "Returns a custom object factory"
-    def factory(*args, **kwargs):
-        kwargs.update(**params)
-        return Class(*args, **kwargs)
-    return factory
 
 def pingpongtest(opts):
     "UDP ping latency test"
