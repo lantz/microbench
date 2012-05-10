@@ -7,15 +7,15 @@ import os
 from sys import stdout
 
 from mininet.log import lg, setLogLevel, info, warn, output
-from mininet.net import Mininet, init
-from mininet.node import OVSKernelSwitch, Host, Controller
-from mininet.test.microbenchmarks.CPUIsolationLib import sanityCheck
-from mininet.test.microbenchmarks.CPUIsolationLib import intListCallback
-#from mininet.test.microbenchmarks.CPUIsolationLib import initOutput
-from mininet.test.microbenchmarks.CPUIsolationLib import parse_cpuacct
-#from mininet.test.microbenchmarks.CPUIsolationLib import appendOutput
-from mininet.util import getCmd, quietRun, numCores
-from mininet.topo import Topo, Node, Edge
+from mininet.net import Mininet
+from mininet.node import CPULimitedHost, Controller
+from CPUIsolationLib import sanityCheck
+from CPUIsolationLib import intListCallback
+#from CPUIsolationLib import initOutput
+from CPUIsolationLib import parse_cpuacct
+#from CPUIsolationLib import appendOutput
+from mininet.util import quietRun, numCores
+from mininet.topo import Topo
 
 
 def parseOptions():
@@ -51,22 +51,19 @@ def parseOptions():
 
 class PingPongTopo(Topo):
 
-    def __init__( self, N, cpu=0.2, in_namespace=True):
+    def __init__( self, N ):
         '''Constructor'''
 
         # Add default members to class.
         super( PingPongTopo, self ).__init__()
-        self.template_host = Node(is_switch=False, cpu=cpu, in_namespace=in_namespace)
 
         # Create host nodes
-        hosts = [str(i) for i in range(1, N+1)]
+        hosts = [ 'h%s' % i  for i in range(1, N+1)]
         for h in hosts:
-            self.add_node(h, self.template_host)
+            self.add_host(h)
 
-        self.add_edge(str(1), str(2), Edge())
+        self.add_link( hosts[0], hosts[1] )
 
-        # Consider all switches and hosts 'on'
-        self.enable_all()
 
 def custom(Class, **params):
     "Returns a custom object factory"
@@ -79,7 +76,7 @@ def pingpongtest(opts):
     "UDP ping latency test"
     cpustress = 'cpu/cpu-stress'
     cpumonitor = 'cpu/cpumonitor'
-    udping = '../nsdi/udp-ping/udping'
+    udping = './udping'
     results = []
     #initOutput( opts.outfile, opts )
     if opts.outdir and not os.path.exists(opts.outdir):
@@ -94,12 +91,12 @@ def pingpongtest(opts):
     numprocs = numCores()
     for n in opts.counts:
         opts.cpu = 0.5 / n
-        net = Mininet(topo=PingPongTopo(n, 
-            cpu=opts.cpu, 
-            in_namespace=(not opts.nonamespace)), 
-            switch=OVSKernelSwitch,
-            host=custom(Host, sched=opts.sched, period_us=opts.period),
-            setStaticCPU=opts.static)
+        host = custom(CPULimitedHost, cpu=opts.cpu, 
+                      inNamespace=(not opts.nonamespace),
+                      sched=opts.sched,
+                      period_us=opts.period)
+        topo=PingPongTopo(n) 
+        net = Mininet(topo=topo, host=host, autoPinCpus=opts.static)
         net.start()
 
         info('*** Starting cpu stress processes\n')
@@ -109,7 +106,7 @@ def pingpongtest(opts):
         # Otherwise they don't run on the udping client or server
         start = 1 if opts.loaded else 3
         for i in xrange(start, n+1):
-            server = net.getNodeByName(str(i))
+            server = net.get( 'h%s' % i )
             scmd = cpustress
             for j in range(numprocs):
                 # was:  cmd[i*numprocs + j] = server.lxcSendCmd(scmd)
@@ -121,8 +118,7 @@ def pingpongtest(opts):
         # sleep(10)
 
         info('*** Checking connectivity and creating OpenFlow route\n')
-        h1 = net.getNodeByName(str(1))
-        h2 = net.getNodeByName(str(2))
+        h1, h2 = net.get( 'h1', 'h2' )
         h1.cmd('ping -nc%d %s' % (1, h2.IP()))
 
         info('*** Starting udping server and waiting 5 seconds\n')
@@ -153,7 +149,6 @@ def pingpongtest(opts):
         net.stop()
 
 if __name__ == '__main__':
-    init()
     setLogLevel( 'info' )
     opts, args = parseOptions()
     sanityCheck()
