@@ -193,6 +193,23 @@ def oldtable( plotopts, results ):
                 '%.4f' % r_dev, '%.4f' % r_err)
 
 
+def dumpResults( results ):
+    "Dump results as text for debugging purposes"
+    for opts, runs in results:
+        print "Options:", opts
+        print "Found", len(runs), "Runs:"
+        for r in range(0, len(runs)):
+            run = runs[ r ]
+            hosts = len( run )
+            cpulimit = run[ 0 ][ 'cpulimit' ]
+            print "Run %d: %d hosts, cpulimit = %.2f" % (
+                r, hosts,  cpulimit )
+            for host in run:
+                assert cpulimit == host[ 'cpulimit' ]
+                print "cpu samples:", host[ 'cpuvals' ]
+                print "time:", host[ 'xvals' ]
+
+
 def table( plotopts, results, tex=False):
     "Print table of sample mean, min and max"
 
@@ -582,11 +599,13 @@ def parseOptions():
 
     return options, args
 
-    
+
 if __name__ == '__main__':
     plotopts, args = parseOptions()
     plotopts.args = args
     all_results = readData( files=args )
+    dumpResults( all_results )
+
     if plotopts.type == 'box':
         plotVariance( plotopts, all_results )
     elif plotopts.type == 'time':
