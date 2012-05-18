@@ -3,17 +3,21 @@
 import fileinput
 from json import loads
 from optparse import OptionParser
-from sys import exit
+from sys import exit, path
 from operator import and_, add
 import os
 import re
 import math
 
+
 import plot_defaults
 import matplotlib.pyplot as plt
-from mininet.test.microbenchmarks.CPUIsolationLib import intListCallback
-from mininet.test.nsdi.plot import colorGenerator
-from mininet.test.nsdi.linktests.helper import avg, stdev
+
+path.append( '..' )
+
+from cpuiso.CPUIsolationLib import intListCallback
+from lib.plot import colorGenerator
+from lib.helper import avg, stdev
 
 def sched_for(indir):
     if 'cfs' in indir:
