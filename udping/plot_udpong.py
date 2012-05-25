@@ -9,11 +9,10 @@ import os
 import re
 import math
 
-
-import plot_defaults
-import matplotlib.pyplot as plt
-
 path.append( '..' )
+
+import lib.plot_defaults
+import matplotlib.pyplot as plt
 
 from cpuiso.CPUIsolationLib import intListCallback
 from lib.plot import colorGenerator
@@ -48,7 +47,7 @@ def plot_pingpong(plotopts):
                 y.append(ping_stats)
                 widths.append(math.log(n,2))
             plt.boxplot(y, positions=x, widths=widths)
-        #plt.xscale('log')
+        # plt.xscale('log')
         plt.grid( True )
         # plt.ylim(ymin=0.0, ymax=0.1)
     else:
@@ -67,9 +66,10 @@ def plot_pingpong(plotopts):
                 ysd.append(sd)
             color = cgen.next()
             label = sched_for(indir)
-            plt.errorbar(x, y, yerr=yerr, color=color, label=label)
+            plt.errorbar(x, y, yerr=yerr, color=color, label=label, linewidth=2)
             # plt.plot(x, ymax, ':', color=color)
         #plt.xscale('log')
+        plt.yscale('log')
         plt.grid( True )
     plt.legend(loc=0)
     plt.ylim(ymin=0)

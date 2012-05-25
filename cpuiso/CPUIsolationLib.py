@@ -18,6 +18,8 @@ from mininet.topo import Topo
 from mininet.util import quietRun, numCores, natural
 from mininet.log import lg, setLogLevel, info, warn, output
 
+CPUDIR = '../cpuiso/cpu'
+
 class CPUIsolationHost( CPULimitedHost ):
     "Degenerate host with no interfaces"
     def setIP( self, *args, **kwargs ):
@@ -190,20 +192,35 @@ def appendOutput( outfile, totals ):
     if outfile:
         f.close()
 
+
+def checkForExec( prog,dirname ):
+    """Check for executable prog; if not found,
+       prompt to compile src in dirname"""
+    prog = dirname + '/' + prog
+    if quietRun( 'which ' +  prog ) == '':
+        print ( "Error: cannot find %s - make sure %s.c" 
+                " is compiled (cd %s; make) " % ( 
+                prog, prog, dirname ) )
+        sys.exit( 1 )
+    return prog
+
+def cpuStressName():
+    "Return name of cpu-stress program"
+    return checkForExec( 'cpu-stress', CPUDIR )
+
+def timerName():
+    "Return name of timer program"
+    return checkForExec( 'timer', CPUDIR )
+
+def cpuMonitorName():
+    "Return name of CPU monitor program"
+    return checkForExec( 'cpumonitor', CPUDIR )
+
+
 def sanityCheck():
     "Make sure we have stuff we need"
-    if quietRun( 'which ./cpu/cpu-stress' ) == '':
-        print ( "Error: cannot find ./cpu/cpu-stress - make sure cpu-stress.c" 
-               " is compiled (cd ./cpu; make) " )
-        sys.exit( 1 )
-
-def timerSanityCheck():
-    "Make sure we have stuff we need"
-    sanityCheck()
-    if quietRun( 'which ./cpu/timer' ) == '':
-        print ( "Error: cannot find ./cpu/timer - make sure timer.c" 
-               " is compiled (cd ./cpu; make) " )
-        sys.exit( 1 )
+    return ( cpuStressName(), timerName(),
+             cpuMonitorName() )
 
 # Options helper functions.
 
